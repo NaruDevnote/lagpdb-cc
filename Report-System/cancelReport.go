@@ -6,6 +6,7 @@
     Recommended Trigger type and trigger: Regex; \A-c(ancel)?r(eport)?(\s+|\z)
 
     Credit: ye olde boi#7325 U-ID:665243449405997066
+    Contributors@ Devonte#0745 U-ID:622146791659405313
 */}}
 
 
@@ -25,7 +26,7 @@
     {{$dbValue := (dbGet .User.ID "key").Value|str}}
     {{$reportMessage := ((index .CmdArgs 0)|toInt64)}}
     {{$reportMessageContent := (getMessage $reports $reportMessage).Content}}
-    {{if (reFind (printf `\A<@!?%d>` .User.ID) $reportMessageContent)}} 
+    {{if (reFind `\A<@!?\d{17,19}>` $reportMessageContent)}} 
             {{if eq "used" $dbValue}}
                 Your latest report has already been cancelled!
             {{else}}
@@ -35,9 +36,12 @@
                     {{$userReportString := (dbGet 2000 (printf "UserCancel%d" .User.ID)).Value}}
                     {{$cancelGuide := (printf "\nDeny request with 🚫, accept with ✅, or request more information with ⚠️")}}
                     {{dbSet 2000 "cancelGuideBasic" $cancelGuide}}
-                    {{$userCancelString := (printf "%s \n<@%d> requested cancellation of this report due to: `%s`" .User.ID $reason)}}
+                    {{$userCancelString := cembed
+                        "title" "Cancel Report Request"
+                        "description" (print "<@%d> requested cancellation of this report\n**Reason**\n`%s`" .User.ID $reason)
+                        "footer" (sdict "text" $cancelGuide)}}
                     {{dbSet 2000 (printf "userCancel%d" .User.ID) $userCancelString}}
-                    {{editMessage $reports $reportMessage (printf "%s %s. %s" $userReportString $userCancelString $cancelGuide)}}
+                    {{editMessage $reports $reportMessage (complexMessageEdit "embed" $userCancelString)}}
                     Cancellation requested.
                     {{deleteAllMessageReactions $reports $reportMessage}}
                     {{addMessageReactions $reports $reportMessage "🚫" "✅" "⚠️"}}
