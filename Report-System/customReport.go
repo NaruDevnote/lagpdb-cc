@@ -29,10 +29,13 @@
     {{$user := userArg (index .CmdArgs 0)}}
     {{$reason := joinStr " " (slice .CmdArgs 1)}}
     {{$reportGuide := (printf "\nDismiss report with ❌, take action with 🛡️, or request more background information with ⚠️")}}
-    {{$userReportString := (printf  "<@%d> reported <@%d> in <#%d> for: `%s` \n Last 100 messages: <%s>" .User.ID $user.ID .Channel.ID $reason $s)}}
+    {{userReportString := cembed
+        "title" "New Report"
+        "description" (printf "<@%d> reported <@%d> in <#%d> for: `%s` \n Last 100 messages: <%s>" .User.ID $user.ID .Channel.ID $reason $s)
+        "footer" (sdict "text" $reportGuide)}}
     {{dbSet 2000 "reportGuideBasic" $reportGuide}}
     {{dbSet 2000 (printf "userReport%d" .User.ID) $userReportString}}
-    {{$x := sendMessageRetID $reports (printf "%s %s" $userReportString $reportGuide)}}
+    {{$x := sendMessageRetID $reports $userReportString}}
     {{addMessageReactions $reports $x "❌" "🛡️" "⚠️"}}
     User reported to the proper authorites!
     {{dbSet .User.ID "key" $secret}}
